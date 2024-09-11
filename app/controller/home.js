@@ -34,10 +34,10 @@ class HomeController extends Controller {
     const driver = new webdriver.Builder()
       .forBrowser('chrome')
       .setChromeOptions(chromeData)
-      // .usingServer('http://192.168.186.130:9515/wd/hub')
+      // .usingServer('http://192.168.1.100:4444/wd/hub') // 默认密码：secret
       .build();
     try {
-      await driver.get('https://dhcj.ct-edu.com.cn/');
+      await driver.get('https://dhcjgl.o-learn.cn/');
       // 点击显示二维码
       await driver.wait(webdriver.until.elementLocated(By.css('.extra>button')), 10000).click();
       // 进入iframe
@@ -93,7 +93,7 @@ class HomeController extends Controller {
       // 获取student-access-token
       const studentAccessToken = (await driver.manage().getCookie('student-access-token')).value;
       await axios({
-        url: 'https://dhcj.ct-edu.com.cn/ws/student/personal/studentPersonal/queryPersonalInfoData',
+        url: 'https://dhcjgl.o-learn.cn/ws/student/personal/studentPersonal/queryPersonalInfoData',
         method: 'post',
         headers: {
           Authorization: `Bearer ${studentAccessToken}`
@@ -171,7 +171,7 @@ class HomeController extends Controller {
     try {
       // 获取课程列表
       await axios({
-        url: 'https://dhcj.ct-edu.com.cn/ws/student/learn/studentLearningCourse/queryLearningCourseData',
+        url: 'https://dhcjgl.o-learn.cn/ws/student/learn/studentLearningCourse/queryLearningCourseData',
         method: 'post',
         headers: {
           Authorization: `Bearer ${studentAccessToken}`
@@ -185,7 +185,7 @@ class HomeController extends Controller {
             .filter(item => !item.flagFixedCourse && item.flagLearningPlatform)
           // 组合url
             .map(item => {
-              return `https://dhcj.ct-edu.com.cn${item.learningUrl}&access_token=${studentAccessToken}`;
+              return `https://dhcjgl.o-learn.cn${item.learningUrl}&access_token=${studentAccessToken}`;
             });
           ctx.logger.info(`${userInfo.regNo}${userInfo.name}:可学习的课程地址`);
           ctx.logger.info(allClassUrl);
@@ -376,29 +376,30 @@ class HomeController extends Controller {
               // }
             }
           });
-        } else {
-          // 设置刷课状态
-          await driver.quit();
-          await ctx.service.donghuaUniversity.setInClass({
-            regNo: userInfo.regNo,
-            errorLog: data.message.toString(),
-            status: 3
-          });
-          // 发送邮件通知
-          if (userInfo.email) {
-            await ctx.service.tools.sendMail(
-              userInfo.email,
-              '刷课提醒',
-              `
-                <p>${userInfo.name}你好！</p>
-                <p>刷课任务出现错误，请重新登录重试，或联系管理员！</p>
-                <p>错误信息：${data.message.toString()}</p>
-                <p>QQ交流群：628240710</p>
-              `
-            );
-          }
-          ctx.logger.error(`${userInfo.regNo}${userInfo.name}:${data.message}`);
         }
+        // else {
+        //   // 设置刷课状态
+        //   await driver.quit();
+        //   await ctx.service.donghuaUniversity.setInClass({
+        //     regNo: userInfo.regNo,
+        //     errorLog: data.message.toString(),
+        //     status: 3
+        //   });
+        //   // 发送邮件通知
+        //   if (userInfo.email) {
+        //     await ctx.service.tools.sendMail(
+        //       userInfo.email,
+        //       '刷课提醒',
+        //       `
+        //         <p>${userInfo.name}你好！</p>
+        //         <p>刷课任务出现错误，请重新登录重试，或联系管理员！</p>
+        //         <p>错误信息：${data.message.toString()}</p>
+        //         <p>QQ交流群：628240710</p>
+        //       `
+        //     );
+        //   }
+        //   ctx.logger.error(`${userInfo.regNo}${userInfo.name}:${data.message}`);
+        // }
       }).catch(async error => {
         ctx.logger.error(`${userInfo.regNo}${userInfo.name}:录播课列表查询失败，错误信息：`);
         ctx.logger.error(error);
